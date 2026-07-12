@@ -16,7 +16,7 @@ from callbacks.factories import NavCallback, FormActionCallback, AppealTypeCallb
 from keyboards.main_menu import confirm_cancel_keyboard
 from keyboards.appeal import appeal_type_keyboard
 from states.forms import AppealForm
-from utils.session import is_locked, update_banner, update_banner_from_callback
+from utils.session import is_locked, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_appeal
 
 router = Router(name="appeal")
@@ -67,6 +67,7 @@ async def appeal_type_chosen(call: CallbackQuery, callback_data: AppealTypeCallb
 @router.message(AppealForm.waiting_for_reason)
 async def appeal_reason_received(message: Message, state: FSMContext):
     reason = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(reason=reason)
     await state.set_state(AppealForm.waiting_for_anything_else)
     data = await state.get_data()
@@ -80,6 +81,7 @@ async def appeal_reason_received(message: Message, state: FSMContext):
 @router.message(AppealForm.waiting_for_anything_else)
 async def appeal_anything_else_received(message: Message, state: FSMContext):
     anything_else = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(anything_else=anything_else)
     await state.set_state(AppealForm.waiting_for_confirmation)
     data = await state.get_data()
