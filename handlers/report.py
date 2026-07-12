@@ -14,7 +14,7 @@ from database.db import db
 from callbacks.factories import NavCallback, FormActionCallback
 from keyboards.main_menu import confirm_cancel_keyboard, back_to_home_keyboard
 from states.forms import ReportForm
-from utils.session import is_locked, warn_locked, start_banner, update_banner, update_banner_from_callback
+from utils.session import is_locked, warn_locked, start_banner, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_report
 
 router = Router(name="report")
@@ -54,6 +54,7 @@ async def start_report(call: CallbackQuery, state: FSMContext):
 @router.message(ReportForm.waiting_for_username)
 async def report_username_received(message: Message, state: FSMContext):
     username = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(username=username)
     await state.set_state(ReportForm.waiting_for_reason)
     caption = _caption(username=username, extra="What is the reason for the report?")
@@ -63,6 +64,7 @@ async def report_username_received(message: Message, state: FSMContext):
 @router.message(ReportForm.waiting_for_reason)
 async def report_reason_received(message: Message, state: FSMContext):
     reason = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(reason=reason)
     await state.set_state(ReportForm.waiting_for_proof)
     data = await state.get_data()
@@ -76,6 +78,7 @@ async def report_reason_received(message: Message, state: FSMContext):
 @router.message(ReportForm.waiting_for_proof)
 async def report_proof_received(message: Message, state: FSMContext):
     proof = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(proof=proof)
     await state.set_state(ReportForm.waiting_for_confirmation)
     data = await state.get_data()
