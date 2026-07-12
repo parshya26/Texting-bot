@@ -26,6 +26,18 @@ LOCKED_MESSAGE = (
 )
 
 
+def resolve_banner_photo():
+    """
+    BANNER_IMAGE_PATH can be either a direct image URL (https://...) or a
+    local file path. Telegram's Bot API accepts both — a URL is passed as a
+    plain string, a local file must be wrapped in FSInputFile.
+    """
+    path = config.banner_image_path
+    if path.startswith("http://") or path.startswith("https://"):
+        return path
+    return FSInputFile(path)
+
+
 async def is_locked(state: FSMContext) -> bool:
     return (await state.get_state()) is not None
 
@@ -42,7 +54,7 @@ async def start_banner(
 ) -> None:
     """Sends the banner photo with an initial caption and remembers its id."""
     sent = await message.answer_photo(
-        FSInputFile(config.banner_image_path),
+        resolve_banner_photo(),
         caption=caption,
         reply_markup=reply_markup,
     )
