@@ -42,6 +42,14 @@ async def is_locked(state: FSMContext) -> bool:
     return (await state.get_state()) is not None
 
 
+async def delete_user_message(message: Message) -> None:
+    """Deletes the user's answer message so only the bot's banner remains visible."""
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+
 async def warn_locked(message: Message) -> None:
     await message.answer(LOCKED_MESSAGE)
 
