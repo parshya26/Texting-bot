@@ -28,7 +28,10 @@ class Config:
     community_name: str = "Texting"
     community_handle: str = "@Texting"
 
-    # Banner image shown above every screen (photo + caption gets edited in place).
+    # Banner shown above every screen (photo + caption gets edited in place).
+    # Can be EITHER:
+    #   - a direct image URL (e.g. https://i.ibb.co/xxxx/banner.jpg)  <- easiest
+    #   - a local file path (e.g. ./assets/banner.jpg)
     banner_image_path: str = os.getenv("BANNER_IMAGE_PATH", "./assets/banner.jpg")
 
     owners: tuple = (
