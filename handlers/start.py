@@ -6,14 +6,14 @@ Core entry-point handlers:
 """
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from config import config
 from database.db import db
 from keyboards.main_menu import home_keyboard, back_to_home_keyboard
 from callbacks.factories import NavCallback
-from utils.session import is_locked, warn_locked, cancel_current_session
+from utils.session import is_locked, warn_locked, cancel_current_session, resolve_banner_photo
 
 router = Router(name="start")
 
@@ -40,7 +40,7 @@ async def cmd_start(message: Message, state: FSMContext):
         return
 
     await message.answer_photo(
-        FSInputFile(config.banner_image_path),
+        resolve_banner_photo(),
         caption=HOME_CAPTION,
         reply_markup=home_keyboard(),
     )
