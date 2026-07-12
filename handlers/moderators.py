@@ -13,7 +13,7 @@ from keyboards.moderators import (
     SERVICE_CATEGORIES,
 )
 from utils.texts import moderators_list_text, moderator_profile_text, service_list_text, reviews_list_text
-from utils.session import is_locked, update_banner, update_banner_from_callback
+from utils.session import is_locked, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_review
 from states.forms import ReviewForm
 
@@ -123,6 +123,8 @@ async def review_rating_chosen(call: CallbackQuery, callback_data: ReviewCallbac
 @router.message(ReviewForm.waiting_for_text)
 async def review_text_received(message: Message, state: FSMContext):
     data = await state.get_data()
+    review_text = message.text.strip()
+    await delete_user_message(message)
     user = await db.get_or_create_user(message.from_user.id, message.from_user.username or "", message.from_user.first_name or "")
 
     if await db.has_reviewed(user["id"], data["mod_id"]):
@@ -134,7 +136,7 @@ async def review_text_received(message: Message, state: FSMContext):
         user_id=user["id"],
         moderator_id=data["mod_id"],
         rating=data["rating"],
-        text=message.text.strip(),
+        text=review_text,
         category=data.get("category", "Other"),
     )
     caption = (
