@@ -14,7 +14,7 @@ from database.db import db
 from callbacks.factories import NavCallback, FormActionCallback
 from keyboards.main_menu import confirm_cancel_keyboard
 from states.forms import SuggestForm
-from utils.session import is_locked, update_banner, update_banner_from_callback
+from utils.session import is_locked, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_suggestion
 
 router = Router(name="suggest")
@@ -55,6 +55,7 @@ async def start_suggest(call: CallbackQuery, state: FSMContext):
 @router.message(SuggestForm.waiting_for_idea)
 async def suggest_idea_received(message: Message, state: FSMContext):
     idea = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(idea=idea)
     await state.set_state(SuggestForm.waiting_for_how_it_works)
     caption = _caption(idea=idea, extra="How would it work?")
@@ -64,6 +65,7 @@ async def suggest_idea_received(message: Message, state: FSMContext):
 @router.message(SuggestForm.waiting_for_how_it_works)
 async def suggest_how_it_works_received(message: Message, state: FSMContext):
     how_it_works = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(how_it_works=how_it_works)
     await state.set_state(SuggestForm.waiting_for_prizes)
     data = await state.get_data()
@@ -77,6 +79,7 @@ async def suggest_how_it_works_received(message: Message, state: FSMContext):
 @router.message(SuggestForm.waiting_for_prizes)
 async def suggest_prizes_received(message: Message, state: FSMContext):
     prizes = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(prizes=prizes)
     await state.set_state(SuggestForm.waiting_for_why)
     data = await state.get_data()
@@ -90,6 +93,7 @@ async def suggest_prizes_received(message: Message, state: FSMContext):
 @router.message(SuggestForm.waiting_for_why)
 async def suggest_why_received(message: Message, state: FSMContext):
     why = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(why=why)
     await state.set_state(SuggestForm.waiting_for_confirmation)
     data = await state.get_data()
