@@ -12,7 +12,7 @@ from database.db import db
 from callbacks.factories import NavCallback, FormActionCallback
 from keyboards.main_menu import confirm_cancel_keyboard
 from states.forms import FeedbackForm
-from utils.session import is_locked, update_banner, update_banner_from_callback
+from utils.session import is_locked, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_feedback
 
 router = Router(name="feedback")
@@ -57,6 +57,7 @@ async def start_feedback(call: CallbackQuery, state: FSMContext):
 @router.message(FeedbackForm.waiting_for_text)
 async def feedback_text_received(message: Message, state: FSMContext):
     text = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(feedback_text=text)
     await state.set_state(FeedbackForm.waiting_for_confirmation)
     caption = _caption(feedback_text=text, extra="Please review your answers. Submit to the admins?")
