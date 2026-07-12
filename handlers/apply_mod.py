@@ -16,7 +16,7 @@ from database.db import db
 from callbacks.factories import NavCallback, FormActionCallback
 from keyboards.main_menu import confirm_cancel_keyboard
 from states.forms import ApplyModForm
-from utils.session import is_locked, update_banner, update_banner_from_callback
+from utils.session import is_locked, update_banner, update_banner_from_callback, delete_user_message
 from utils.admin_notify import notify_admins_new_application
 
 router = Router(name="apply_mod")
@@ -66,6 +66,7 @@ async def start_apply_mod(call: CallbackQuery, state: FSMContext):
 @router.message(ApplyModForm.waiting_for_experience)
 async def apply_experience_received(message: Message, state: FSMContext):
     experience = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(experience=experience)
     await state.set_state(ApplyModForm.waiting_for_availability)
     caption = _caption(experience=experience, extra="What's your availability (hours/timezone)?")
@@ -75,6 +76,7 @@ async def apply_experience_received(message: Message, state: FSMContext):
 @router.message(ApplyModForm.waiting_for_availability)
 async def apply_availability_received(message: Message, state: FSMContext):
     availability = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(availability=availability)
     await state.set_state(ApplyModForm.waiting_for_why_you)
     data = await state.get_data()
@@ -88,6 +90,7 @@ async def apply_availability_received(message: Message, state: FSMContext):
 @router.message(ApplyModForm.waiting_for_why_you)
 async def apply_why_you_received(message: Message, state: FSMContext):
     why_you = message.text.strip()
+    await delete_user_message(message)
     await state.update_data(why_you=why_you)
     await state.set_state(ApplyModForm.waiting_for_confirmation)
     data = await state.get_data()
