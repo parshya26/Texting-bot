@@ -14,7 +14,8 @@ def home_keyboard() -> InlineKeyboardMarkup:
     b.button(text="Host a Giveaway", callback_data=NavCallback(target="giveaway"))
     b.button(text="Moderators", callback_data=NavCallback(target="moderators"))
     b.button(text="Owners", callback_data=NavCallback(target="owners"))
-    b.adjust(2, 2, 1, 1, 2)
+    b.button(text="📜 Rules", callback_data=NavCallback(target="rules"))
+    b.adjust(2, 2, 1, 1, 2, 1)
     return b.as_markup()
 
 
