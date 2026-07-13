@@ -54,6 +54,7 @@ async def cmd_rank(message: Message):
 
     level, xp_into, xp_next = _compute_level(stats["xp"])
     rank_pos, total = await db.get_user_rank_position(user.id, config.main_chat_id)
+    reputation = await db.get_user_reputation(user.id, config.main_chat_id)
     avatar_bytes = await fetch_avatar_bytes(message.bot, user.id)
 
     image_bytes = render_rank_card(
@@ -65,6 +66,7 @@ async def cmd_rank(message: Message):
         rank_position=rank_pos,
         total_ranked=total,
         total_messages=stats["total_messages"],
+        reputation=reputation,
         avatar_bytes=avatar_bytes,
     )
     await message.answer_photo(BufferedInputFile(image_bytes, filename="rank.png"))
@@ -88,6 +90,9 @@ async def cmd_streak(message: Message):
     else:
         streak_range = "—"
 
+    stats = await db.get_user_stats(user.id, config.main_chat_id)
+    total_messages = stats["total_messages"] if stats else 0
+
     avatar_bytes = await fetch_avatar_bytes(message.bot, user.id)
     image_bytes = render_streak_card(
         display_name=user.first_name or user.username or "Member",
@@ -95,6 +100,7 @@ async def cmd_streak(message: Message):
         current_streak=streak["current_streak"],
         best_streak=streak["best_streak"],
         best_streak_range=streak_range,
+        total_messages=total_messages,
         avatar_bytes=avatar_bytes,
     )
     await message.answer_photo(BufferedInputFile(image_bytes, filename="streak.png"))
