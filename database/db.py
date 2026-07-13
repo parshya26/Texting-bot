@@ -598,5 +598,11 @@ class Database:
             (chat_id, limit),
         )
 
+    async def get_user_reputation(self, telegram_id: int, chat_id: int) -> int:
+        row = await self._fetchone(
+            "SELECT rep_points FROM reputation WHERE telegram_id = ? AND chat_id = ?", (telegram_id, chat_id)
+        )
+        return row["rep_points"] if row else 0
+
 
 db = Database(config.db_path)
