@@ -68,3 +68,12 @@ async def nav_owners(call: CallbackQuery, state: FSMContext):
     caption = f"<b>👑 {config.community_name} Owners</b>\n\n{OWNERS_CAPTION_EXTRA}"
     await call.message.edit_caption(caption=caption, reply_markup=back_to_home_keyboard())
     await call.answer()
+
+
+@router.callback_query(NavCallback.filter(F.target == "rules"))
+async def nav_rules(call: CallbackQuery, state: FSMContext):
+    if await is_locked(state):
+        await call.answer("You're already in the middle of a support request. Send /cancel first.", show_alert=True)
+        return
+    await call.message.edit_caption(caption=config.rules_text, reply_markup=back_to_home_keyboard())
+    await call.answer()
