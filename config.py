@@ -38,6 +38,19 @@ class Config:
         {"username": "Simp", "display_name": "Simp", "role": "Owner", "contact": "@Simp"},
     )
 
+    # Shown when the "Rules" button is tapped. Edit freely — one bullet per line.
+    rules_text: str = (
+        "💎 @Texting Rules\n\n"
+        "• Do not advertise or promote anything.\n"
+        "• Do not share NSFW content.\n"
+        "• Do not post personal or sensitive information.\n"
+        "• Do not spam messages or reactions.\n"
+        "• Do not promote other groups or channels.\n"
+        "• Do not beg for money.\n"
+        "• Treat every member and moderator with respect.\n"
+        "• Listen to staff — repeated rule-breaking leads to a ban.\n"
+    )
+
     giveaway_host_contact: str = os.getenv("GIVEAWAY_HOST_CONTACT", "hoepium")
 
     # Footer stamped on every generated rank/streak/leaderboard image.
