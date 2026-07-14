@@ -33,8 +33,11 @@ def _f(path: str, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(path, size)
 
 
-def _rr(draw: ImageDraw.ImageDraw, box, radius, fill=None, outline=None, width=1):
-    draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
+def _rr(draw: ImageDraw.ImageDraw, box, radius, fill=None, outline=None, width=1, corners=None):
+    kwargs = {}
+    if corners is not None:
+        kwargs["corners"] = corners
+    draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width, **kwargs)
 
 
 def _watermark(img: Image.Image, rows: int = 3, cols: int = 6) -> None:
@@ -144,7 +147,18 @@ def render_rank_card(
     progress = min(1.0, xp_into_level / xp_for_next_level) if xp_for_next_level > 0 else 1.0
     filled = int((bar_w - 8) * progress)
     if filled > 0:
-        _rr(draw, (bar_x + 4, bar_y + 4, bar_x + 4 + filled, bar_y + bar_h - 4), radius=9, fill=TEXT_WHITE)
+        fill_right = bar_x + 4 + filled
+        # Round the left cap to match the track's rounded start; keep the
+        # right edge square so a partial fill reads as "cut off here", not
+        # as a floating rounded pill in the middle of the bar.
+        is_full = filled >= bar_w - 8
+        _rr(
+            draw,
+            (bar_x + 4, bar_y + 4, fill_right, bar_y + bar_h - 4),
+            radius=8,
+            fill=TEXT_WHITE,
+            corners=(True, is_full, is_full, True),
+        )
 
     draw.text((bar_x, bar_y - 40), f"{xp_into_level}/{xp_for_next_level} XP", font=_f(FONT_REGULAR, 26), fill=TEXT_MUTED)
     draw.text((bar_x + bar_w, bar_y - 40), f"LEVEL {level}", font=_f(FONT_BOLD, 30), fill=TEXT_WHITE, anchor="ra")
