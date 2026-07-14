@@ -4,7 +4,17 @@ Async data-access layer over SQLite (aiosqlite).
 Every method returns plain dicts/lists/primitives — no SQLite-specific
 objects leak into handlers — so this file is the only thing that would
 need rewriting if the project ever moves to PostgreSQL.
+
+Connection strategy: a single persistent connection is opened once and
+reused for the life of the process, with WAL journal mode + a busy_timeout.
+Opening a brand-new SQLite connection for every single query (the previous
+approach) causes contention under any real message volume — concurrent
+opens can hit "database is locked" errors, which were being silently
+swallowed by aiogram's error handling, making the bot intermittently not
+reply at all. WAL mode lets reads and writes coexist without blocking each
+other, and reusing one connection removes the open/close overhead entirely.
 """
+import asyncio
 import datetime as dt
 from pathlib import Path
 from typing import Optional
@@ -20,33 +30,53 @@ async def init_db() -> None:
     async with aiosqlite.connect(config.db_path) as conn:
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             await conn.executescript(f.read())
+        await conn.execute("PRAGMA journal_mode=WAL;")
+        await conn.execute("PRAGMA busy_timeout=5000;")
         await conn.commit()
 
 
 class Database:
     def __init__(self, path: str):
         self.path = path
+        self._conn: Optional[aiosqlite.Connection] = None
+        self._lock = asyncio.Lock()
+
+    async def _ensure_connected(self) -> aiosqlite.Connection:
+        if self._conn is None:
+            conn = await aiosqlite.connect(self.path)
+            conn.row_factory = aiosqlite.Row
+            await conn.execute("PRAGMA journal_mode=WAL;")
+            await conn.execute("PRAGMA busy_timeout=5000;")
+            await conn.execute("PRAGMA foreign_keys=ON;")
+            await conn.commit()
+            self._conn = conn
+        return self._conn
 
     # ---------------- low-level helpers ----------------
+    # A single asyncio.Lock serializes access to the one shared connection.
+    # This is cheap (SQLite operations are fast) and completely avoids any
+    # "database is locked" errors from overlapping writes.
     async def _fetchone(self, query: str, params: tuple = ()) -> Optional[dict]:
-        async with aiosqlite.connect(self.path) as conn:
-            conn.row_factory = aiosqlite.Row
+        async with self._lock:
+            conn = await self._ensure_connected()
             cur = await conn.execute(query, params)
             row = await cur.fetchone()
             return dict(row) if row else None
 
     async def _fetchall(self, query: str, params: tuple = ()) -> list[dict]:
-        async with aiosqlite.connect(self.path) as conn:
-            conn.row_factory = aiosqlite.Row
+        async with self._lock:
+            conn = await self._ensure_connected()
             cur = await conn.execute(query, params)
             rows = await cur.fetchall()
             return [dict(r) for r in rows]
 
     async def _execute(self, query: str, params: tuple = ()) -> int:
-        async with aiosqlite.connect(self.path) as conn:
+        async with self._lock:
+            conn = await self._ensure_connected()
             cur = await conn.execute(query, params)
             await conn.commit()
             return cur.lastrowid
+
 
     # ================= USERS =================
     async def get_or_create_user(self, telegram_id: int, username: str, first_name: str) -> dict:
