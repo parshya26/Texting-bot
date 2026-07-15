@@ -1,5 +1,2 @@
 [build]
-builder = "NIXPACKS"
-
-[variables]
-NIXPACKS_PYTHON_VERSION = "3.12"
+builder = "RAILPACK"
