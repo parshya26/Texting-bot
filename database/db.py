@@ -16,6 +16,7 @@ other, and reusing one connection removes the open/close overhead entirely.
 """
 import asyncio
 import datetime as dt
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -26,7 +27,18 @@ from config import config
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 
+def _ensure_db_directory(path: str) -> None:
+    """Creates the parent directory of the database file if it doesn't exist.
+    This makes the app resilient to whatever exact volume mount path was
+    configured on the hosting platform (Railway, etc.) — no more manual
+    "is /data a file or a folder?" guessing."""
+    parent = os.path.dirname(path)
+    if parent and not os.path.isdir(parent):
+        os.makedirs(parent, exist_ok=True)
+
+
 async def init_db() -> None:
+    _ensure_db_directory(config.db_path)
     async with aiosqlite.connect(config.db_path) as conn:
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             await conn.executescript(f.read())
@@ -43,6 +55,7 @@ class Database:
 
     async def _ensure_connected(self) -> aiosqlite.Connection:
         if self._conn is None:
+            _ensure_db_directory(self.path)
             conn = await aiosqlite.connect(self.path)
             conn.row_factory = aiosqlite.Row
             await conn.execute("PRAGMA journal_mode=WAL;")
